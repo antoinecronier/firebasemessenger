@@ -94,9 +94,9 @@ public class ScannerUtil {
   }
 
   public String inputString() {
-    if (this.sc.hasNextLine()) {
-      this.sc.reset();
-    }
+//    if (this.sc.hasNextLine()) {
+//      this.sc.reset();
+//    }
 
     return this.sc.nextLine();
   }

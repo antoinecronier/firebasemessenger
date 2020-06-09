@@ -2,7 +2,13 @@ package com.tactfactory.firemessenger.database;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 
+import com.google.api.core.SettableApiFuture;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
@@ -13,10 +19,11 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.tactfactory.firemessenger.entities.Room;
 import com.tactfactory.firemessenger.entities.User;
+import com.tactfactory.firemessenger.utils.JsonUtil;
 
 public class FirebaseManager {
 
-  private static final String CURRENT_USER = "currentUser";
+  private static final String CURRENT_USERS = "currentUser";
   private static final String CURRENT_ROOM = "currentSalon";
 
   private static FirebaseManager INSTANCE = null;
@@ -45,12 +52,12 @@ public class FirebaseManager {
 
   public void log(final User user) {
     final FirebaseDatabase database = FirebaseDatabase.getInstance();
-    database.getReference(CURRENT_USER).child(user.getGuid()).setValueAsync(user);
+    database.getReference(CURRENT_USERS).child(user.getGuid()).setValueAsync(user);
   }
 
   public void logout(final User user) {
     final FirebaseDatabase database = FirebaseDatabase.getInstance();
-    database.getReference(CURRENT_USER).child(user.getGuid()).removeValueAsync();
+    database.getReference(CURRENT_USERS).child(user.getGuid()).removeValueAsync();
   }
 
   public DatabaseReference connectToRoom(final User user, final String roomId) {
@@ -77,5 +84,40 @@ public class FirebaseManager {
     });
 
     return result;
+  }
+
+  public List<User> getConnectedUser() {
+    final SettableApiFuture<List<User>> future = SettableApiFuture.create();
+
+    final FirebaseDatabase database = FirebaseDatabase.getInstance();
+    database.getReference(CURRENT_USERS).addListenerForSingleValueEvent(new ValueEventListener() {
+      @Override
+      public void onDataChange(DataSnapshot dataSnapshot) {
+        final List<User> result = new ArrayList<>();
+        if (dataSnapshot.exists()) {
+          for (DataSnapshot subSnap : dataSnapshot.getChildren()) {
+            try {
+              HashMap<String, String> datas = (HashMap<String, String>) subSnap.getValue();
+              result.add(new User(datas.get("guid"), datas.get("login")));
+            } catch (Exception e) {
+              subSnap.getRef().removeValueAsync();
+            }
+          }
+        }
+        future.set(result);
+      }
+
+      @Override
+      public void onCancelled(DatabaseError databaseError) {
+        future.set(null);
+      }
+    });
+
+    try {
+      return future.get();
+    } catch (InterruptedException | ExecutionException e) {
+      e.printStackTrace();
+    }
+    return null;
   }
 }
