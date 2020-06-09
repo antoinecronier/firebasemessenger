@@ -3,12 +3,16 @@
  */
 package com.tactfactory.firemessenger;
 
+import com.tactfactory.firemessenger.managers.UserManager;
+
 public class App {
   public String getGreeting() {
-    return "Hello world.";
+    return "Welcome to firemessenger";
   }
 
   public static void main(String[] args) throws Exception {
     System.out.println(new App().getGreeting());
+
+    new UserManager().run();
   }
 }
