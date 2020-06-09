@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import com.tactfactory.firemessenger.database.FirebaseManager;
 import com.tactfactory.firemessenger.entities.Command;
+import com.tactfactory.firemessenger.entities.Room;
 import com.tactfactory.firemessenger.entities.User;
 import com.tactfactory.firemessenger.utils.ScannerUtil;
 
@@ -40,12 +41,12 @@ public class UserManager {
         } else if (answer.startsWith(Command.LOG.getCommand())) {
           this.log(this.user, Command.LOG.removeCommandString(answer));
         } else if (answer.startsWith(Command.SHOW_ROOMS.getCommand())) {
-          String room = Command.LOG_ROOM.removeCommandString(answer);
-          if (!room.isEmpty()) {
-            this.connectToRoom(this.user, room);
+          String room = Command.SHOW_ROOMS.removeCommandString(answer);
+          if (room.isEmpty()) {
+            this.showRooms();
           } else {
             System.err
-                .println(String.format("%s commande doit contenir le guid de la room", Command.LOG_ROOM.getCommand()));
+                .println(String.format("%s commande ne doit pas contenir d'argument", Command.LOG_ROOM.getCommand()));
           }
         } else if (answer.startsWith(Command.SHOW_USERS.getCommand())) {
           if (Command.SHOW_USERS.removeCommandString(answer).isEmpty()) {
@@ -57,7 +58,7 @@ public class UserManager {
         } else if (answer.startsWith(Command.CREATE_ROOM.getCommand())) {
           String room = Command.CREATE_ROOM.removeCommandString(answer);
           if (!room.isEmpty()) {
-            this.createRoom();
+            this.createRoom(room);
           } else {
             System.err
                 .println(String.format("%s commande doit contenir nom du salon", Command.CREATE_ROOM.getCommand()));
@@ -66,15 +67,35 @@ public class UserManager {
           System.out.println(Command.info());
         } else if (answer.startsWith(Command.QUIT.getCommand())) {
           quit = answer;
+          this.logout(this.user);
+        }
+      } else {
+        if (this.chat != null) {
+          this.chat.write(answer);
         }
       }
 
     } while (!quit.equals(Command.QUIT.getCommand()));
   }
 
-  private void createRoom() {
-    // TODO Auto-generated method stub
+  private void showRooms() {
+    try {
+      for (Room room : FirebaseManager.getInstance().getRooms()) {
+        System.out.println(room.getGuid() + " : " + room.getName());
+      }
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
 
+  private void createRoom(String roomName) {
+    try {
+      final Room room = new Room(roomName);
+      room.getUsers().add(this.user);
+      this.chat = new ChatManager(FirebaseManager.getInstance().createRoom(room));
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 
   private void showUsers() {
@@ -89,7 +110,10 @@ public class UserManager {
 
   private void connectToRoom(User user, String room) {
     try {
-      FirebaseManager.getInstance().connectToRoom(user, room);
+      if (this.chat != null) {
+        this.chat.remove(this.user);
+      }
+      this.chat = new ChatManager(FirebaseManager.getInstance().connectToRoom(user, room));
     } catch (IOException e) {
       e.printStackTrace();
     }

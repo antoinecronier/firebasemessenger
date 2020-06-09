@@ -11,7 +11,7 @@ public enum Command {
     CREATE_ROOM(5, Command.COMMAND_PREFIX + "create_room", "Permet de créer un salon"),
     SHOW_ROOMS(6, Command.COMMAND_PREFIX + "show_rooms", "Permet d'afficher tout les salons"),
     LOG_ROOM(7, Command.COMMAND_PREFIX + "log_room", "Permet de se connecter à un salon"),
-    INFO(7, Command.COMMAND_PREFIX + "?", "Affiche les commandes");
+    INFO(8, Command.COMMAND_PREFIX + "?", "Affiche les commandes");
 
     public static final String COMMAND_PREFIX = "/";
 

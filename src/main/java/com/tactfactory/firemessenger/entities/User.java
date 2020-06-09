@@ -17,11 +17,11 @@ public class User {
   }
 
   public String getGuid() {
-    return guid;
+    return this.guid;
   }
 
   public String getLogin() {
-    return login;
+    return this.login;
   }
 
   public void setLogin(String login) {

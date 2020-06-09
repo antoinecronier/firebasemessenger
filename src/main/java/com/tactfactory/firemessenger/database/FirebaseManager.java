@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 
@@ -68,14 +70,9 @@ public class FirebaseManager {
       @Override
       public void onDataChange(DataSnapshot dataSnapshot) {
         if (dataSnapshot.exists()) {
-          Room room = (Room) dataSnapshot.getValue();
+          Room room = dataSnapshot.getValue(Room.class);
           room.getUsers().add(user);
         }
-//        else {
-//          Room room = new Room("");
-//          room.getUsers().add(user);
-//          result.setValueAsync(room);
-//        }
       }
 
       @Override
@@ -102,6 +99,47 @@ public class FirebaseManager {
             } catch (Exception e) {
               subSnap.getRef().removeValueAsync();
             }
+          }
+        }
+        future.set(result);
+      }
+
+      @Override
+      public void onCancelled(DatabaseError databaseError) {
+        future.set(null);
+      }
+    });
+
+    try {
+      return future.get();
+    } catch (InterruptedException | ExecutionException e) {
+      e.printStackTrace();
+    }
+    return null;
+  }
+
+  public DatabaseReference createRoom(Room room) {
+    final FirebaseDatabase database = FirebaseDatabase.getInstance();
+    database.getReference(CURRENT_ROOM).child(room.getGuid()).setValueAsync(room);
+
+    return database.getReference(CURRENT_ROOM + "/" + room.getGuid());
+  }
+
+  public List<Room> getRooms() {
+    final SettableApiFuture<List<Room>> future = SettableApiFuture.create();
+
+    final FirebaseDatabase database = FirebaseDatabase.getInstance();
+    database.getReference(CURRENT_ROOM).addListenerForSingleValueEvent(new ValueEventListener() {
+      @Override
+      public void onDataChange(DataSnapshot dataSnapshot) {
+        final List<Room> result = new ArrayList<>();
+        if (dataSnapshot.exists()) {
+          try {
+            for (DataSnapshot subSnap : dataSnapshot.getChildren()) {
+              result.add(subSnap.getValue(Room.class));
+            }
+          } catch (Exception e) {
+            e.printStackTrace();
           }
         }
         future.set(result);
