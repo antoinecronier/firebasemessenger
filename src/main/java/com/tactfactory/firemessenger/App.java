@@ -13,6 +13,15 @@ public class App {
   public static void main(String[] args) throws Exception {
     System.out.println(new App().getGreeting());
 
-    new UserManager().run();
+    UserManager uManager = new UserManager();
+    uManager.run();
+    Runtime.getRuntime().addShutdownHook(new Thread()
+    {
+        @Override
+        public void run()
+        {
+          uManager.quit();
+        }
+    });
   }
 }

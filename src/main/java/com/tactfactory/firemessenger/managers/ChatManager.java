@@ -8,6 +8,8 @@ import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.ValueEventListener;
+import com.tactfactory.firemessenger.entities.Room;
 import com.tactfactory.firemessenger.entities.User;
 
 public class ChatManager {
@@ -81,6 +83,19 @@ public class ChatManager {
   }
 
   public void remove(User user) {
-    this.roomUsersDbRef.child(user.getGuid()).removeValueAsync();
+    this.roomDbRef.addListenerForSingleValueEvent(new ValueEventListener() {
+      @Override
+      public void onDataChange(DataSnapshot dataSnapshot) {
+        if (dataSnapshot.exists()) {
+          Room room = dataSnapshot.getValue(Room.class);
+          room.getUsers().remove(user);
+          dataSnapshot.getRef().setValueAsync(room);
+        }
+      }
+
+      @Override
+      public void onCancelled(DatabaseError databaseError) {
+      }
+    });
   }
 }

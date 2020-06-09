@@ -10,6 +10,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 
+import com.google.api.core.ApiFuture;
 import com.google.api.core.SettableApiFuture;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
@@ -57,14 +58,14 @@ public class FirebaseManager {
     database.getReference(CURRENT_USERS).child(user.getGuid()).setValueAsync(user);
   }
 
-  public void logout(final User user) {
+  public ApiFuture<Void> logout(final User user) {
     final FirebaseDatabase database = FirebaseDatabase.getInstance();
-    database.getReference(CURRENT_USERS).child(user.getGuid()).removeValueAsync();
+    return database.getReference(CURRENT_USERS).child(user.getGuid()).removeValueAsync();
   }
 
   public DatabaseReference connectToRoom(final User user, final String roomId) {
     final FirebaseDatabase database = FirebaseDatabase.getInstance();
-    DatabaseReference result = database.getReference(CURRENT_ROOM).child(roomId);
+    final DatabaseReference result = database.getReference(CURRENT_ROOM).child(roomId);
 
     result.addListenerForSingleValueEvent(new ValueEventListener() {
       @Override
@@ -72,6 +73,7 @@ public class FirebaseManager {
         if (dataSnapshot.exists()) {
           Room room = dataSnapshot.getValue(Room.class);
           room.getUsers().add(user);
+          dataSnapshot.getRef().setValueAsync(room);
         }
       }
 

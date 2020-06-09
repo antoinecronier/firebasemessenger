@@ -1,6 +1,7 @@
 package com.tactfactory.firemessenger.managers;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 
 import com.tactfactory.firemessenger.database.FirebaseManager;
 import com.tactfactory.firemessenger.entities.Command;
@@ -121,8 +122,11 @@ public class UserManager {
 
   private void logout(User user) {
     try {
-      FirebaseManager.getInstance().logout(user);
-    } catch (IOException e) {
+      if (this.chat != null) {
+        this.chat.remove(this.user);
+      }
+      FirebaseManager.getInstance().logout(user).get();
+    } catch (IOException | InterruptedException | ExecutionException e) {
       e.printStackTrace();
     }
   }
@@ -143,5 +147,9 @@ public class UserManager {
         e.printStackTrace();
       }
     }
+  }
+
+  public void quit() {
+    this.logout(this.user);
   }
 }
